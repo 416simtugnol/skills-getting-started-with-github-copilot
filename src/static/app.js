@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
       card.className = 'activity-card';
 
       const participantsList = info.participants.length > 0
-        ? info.participants.map(p => `<li>${p}</li>`).join('')
+        ? info.participants.map(p => `<li><span>${p}</span><button class="unregister-btn" data-activity="${name}" data-email="${p}" title="Unregister ${p}">❌</button></li>`).join('')
         : '<li class="empty">No participants yet</li>';
 
       card.innerHTML = `
@@ -84,6 +84,34 @@ document.addEventListener('DOMContentLoaded', () => {
       fetchActivities(); // Re-fetch and render to show the new participant
     } catch (error) {
       showMessage(error.message, 'error');
+    }
+  });
+
+  // Event Delegation for unregister buttons
+  activitiesListDiv.addEventListener('click', async (e) => {
+    // Check if a delete button was clicked
+    if (e.target && e.target.classList.contains('unregister-btn')) {
+      const button = e.target;
+      const activityName = button.dataset.activity;
+      const email = button.dataset.email;
+
+      if (!confirm(`Are you sure you want to unregister ${email} from ${activityName}?`)) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/activities/${encodeURIComponent(activityName)}/unregister?email=${encodeURIComponent(email)}`, {
+          method: 'POST',
+        });
+        const result = await response.json();
+        if (!response.ok) {
+          throw new Error(result.detail || 'An unknown error occurred.');
+        }
+        showMessage(result.message, 'success');
+        fetchActivities(); // Re-fetch and render to update the participants list
+      } catch (error) {
+        showMessage(error.message, 'error');
+      }
     }
   });
 
